@@ -36,23 +36,29 @@ class ExecutionRecordLegacyAccessorsTest {
     }
 
     @Test
-    void markSuccess_clearsError_andMarkError_clearsOutput() {
-        ExecutionRecord record = new ExecutionRecord(
+    void terminalMutators_clearOppositePayloadOnValidTransitions() {
+        ExecutionRecord successRecord = new ExecutionRecord(
                 "exec-2",
                 new InvocationTask("exec-2", "fn", null, null, null, null, null, 1)
         );
+        successRecord.markRunning();
+        successRecord.lastError(new ErrorInfo("ERR", "stale"));
 
-        record.markRunning();
-        record.markError(new ErrorInfo("ERR", "first"));
-        assertThat(record.lastError()).isNotNull();
-        assertThat(record.output()).isNull();
+        successRecord.markSuccess("ok");
 
-        record.markSuccess("ok");
-        assertThat(record.output()).isEqualTo("ok");
-        assertThat(record.lastError()).isNull();
+        assertThat(successRecord.output()).isEqualTo("ok");
+        assertThat(successRecord.lastError()).isNull();
 
-        record.markError(new ErrorInfo("ERR2", "second"));
-        assertThat(record.output()).isNull();
-        assertThat(record.lastError().code()).isEqualTo("ERR2");
+        ExecutionRecord errorRecord = new ExecutionRecord(
+                "exec-3",
+                new InvocationTask("exec-3", "fn", null, null, null, null, null, 1)
+        );
+        errorRecord.markRunning();
+        errorRecord.output("stale");
+
+        errorRecord.markError(new ErrorInfo("ERR2", "second"));
+
+        assertThat(errorRecord.output()).isNull();
+        assertThat(errorRecord.lastError().code()).isEqualTo("ERR2");
     }
 }
